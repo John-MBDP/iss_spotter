@@ -47,10 +47,51 @@ const fetchCoordsByIp = (ip, callback) =>
     }
   );
 
+const fetchISSFlyOverTimes = function (coords, callback) {
+  // ...
+  request(
+    `https://iss-pass.herokuapp.com/json/?lat=${coords.latitude}&lon=${coords.longitude}`,
+    (error, response, body) => {
+      if (error) {
+        callback(error, null);
+        return;
+      }
+
+      if (response.statusCode !== 200) {
+        callback(
+          Error(
+            `Status Code ${response.statusCode} when fetching Coordinates for IP: ${body}`
+          ),
+          null
+        );
+        return;
+      }
+      const amountOfTimePasses = JSON.parse(body).response;
+      callback(null, amountOfTimePasses);
+    }
+  );
+};
+
+const nextISSTimesForMyLocation = function (callback) {
+  fetchMyIP((error, ip) => {
+    if (error) {
+      return callback(error, null);
+    }
+    fetchCoordsByIp(ip, (error, coords) => {
+      if (error) {
+        return callback(error, null);
+      }
+      fetchISSFlyOverTimes(coords, (error, flyover) => {
+        if (error) {
+          return callback(error, null);
+        }
+        callback(null, flyover);
+      });
+    });
+  });
+};
+
 //if something happens do something
 //example would be send a message and now do what with it
 
-module.exports = {
-  fetchMyIP,
-  fetchCoordsByIp,
-};
+module.exports = { nextISSTimesForMyLocation };
